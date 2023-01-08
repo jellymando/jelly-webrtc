@@ -1,6 +1,10 @@
 import React, { forwardRef, useCallback } from "react";
 import styled from "styled-components";
-import { COLOR } from "constants/color";
+
+import { COLOR } from "constants/style";
+import { KEY } from "constants/message";
+
+import useWebRTC from "hooks/useWebRTC";
 
 const Container = styled.div`
   height: 90%;
@@ -12,22 +16,12 @@ const Button = styled.button`
   background-color: ${COLOR.BLUE2};
 `;
 
-const Nav = ({ video }: { video: HTMLVideoElement | null }) => {
-  const screenShare = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getDisplayMedia({
-      audio: true,
-      video: true
-    });
-
-    if (video && stream) {
-      video.srcObject = stream;
-    }
-    console.log("stream", stream);
-  }, []);
+const Nav = () => {
+  const { startScreenShare, closeScreenShare } = useWebRTC();
 
   return (
     <Container>
-      <Button onClick={screenShare}>화면공유</Button>
+      <Button onClick={startScreenShare}>화면공유</Button>
     </Container>
   );
 };

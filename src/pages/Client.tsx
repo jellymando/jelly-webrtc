@@ -1,7 +1,7 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import styled from "styled-components";
 
-import { COLOR } from "constants/color";
+import { COLOR } from "constants/style";
 
 import Nav from "components/Nav";
 
@@ -24,19 +24,14 @@ const VideoWrap = styled.div`
 `;
 
 const Video = styled.video``;
-const Canvas = styled.canvas``;
 
 function Viewer() {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-
   return (
     <Container>
       <VideoWrap>
-        <Canvas ref={canvasRef} />
-        <Video ref={videoRef} autoPlay playsInline muted />
+        <Video id="video" autoPlay playsInline muted />
       </VideoWrap>
-      <Nav video={videoRef.current} />
+      <Nav />
     </Container>
   );
 }

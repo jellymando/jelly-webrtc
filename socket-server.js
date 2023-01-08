@@ -9,14 +9,15 @@ const io = new Server(server, {
   }
 });
 
-// app.use(express.static(__dirname + "/build"));
-
-// app.get("/", (req, res) => {
-//   console.log()
-// });
-
 io.on("connection", (socket) => {
-  console.log("a user connected");
+  // socket.join("jelly room");
+
+  socket.on("sendMessage", (message) => {
+    // 본인을 제외한 소켓에 메세지 전송
+    socket.broadcast.emit("message", message);
+  });
+
+  // io.to("jelly room").emit("message", "클라이언트 들어옴");
 });
 
 server.listen(4000, () => {
