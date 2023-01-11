@@ -1,6 +1,6 @@
 export const KEY = {
   MESSAGE: "meesage",
-  STREAM: "stream"
+  CLOSE: "close"
 };
 
 export const ROLE = {

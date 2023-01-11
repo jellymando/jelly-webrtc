@@ -10,7 +10,7 @@ function useSocket() {
   const location = useLocation();
 
   const sendMessage = useCallback(
-    ({ key = KEY.STREAM, payload }: { key?: string; payload: any }) => {
+    ({ key = KEY.MESSAGE, payload }: { key?: string; payload?: any }) => {
       const role =
         location.pathname.replace("/", "") === ROLE.CLIENT
           ? ROLE.CLIENT

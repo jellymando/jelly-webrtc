@@ -1,15 +1,16 @@
 import React, { useRef, useMemo, useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-import { ROLE } from "constants/message";
+import { KEY, ROLE } from "constants/message";
 
 import useSocket from "hooks/useSocket";
 
 function useWebRTC() {
   const signaling = new BroadcastChannel("webrtc");
   const location = useLocation();
-  const { sendMessage } = useSocket();
+  const { socket, sendMessage } = useSocket();
   const pcRef = useRef<any>(null);
+  const streamRef = useRef<any>(null);
   const role = useMemo(
     () =>
       location.pathname.replace("/", "") === ROLE.CLIENT
@@ -34,19 +35,19 @@ function useWebRTC() {
     };
 
     pcRef.current.addEventListener("connectionstatechange", (event: any) => {
-      console.log("connectionstatechange", event);
+      console.log("connectionstatechange", pcRef.current.connectionState);
     });
   }, []);
 
   const startScreenShare = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getDisplayMedia({
+    streamRef.current = await navigator.mediaDevices.getDisplayMedia({
       audio: true,
       video: true
     });
 
     const $video = document.getElementById("video") as HTMLVideoElement;
-    if ($video && stream) {
-      $video.srcObject = stream;
+    if ($video && streamRef.current) {
+      $video.srcObject = streamRef.current;
       sendMessage({ payload: "클라이언트가 화면을 공유했습니다." });
     }
 
@@ -54,10 +55,12 @@ function useWebRTC() {
       createPeerConnection();
     }
 
-    if (stream) {
-      stream
+    if (streamRef.current) {
+      streamRef.current
         .getTracks()
-        .forEach((track: any) => pcRef.current.addTrack(track, stream));
+        .forEach((track: any) =>
+          pcRef.current.addTrack(track, streamRef.current)
+        );
     }
 
     const offer = await pcRef.current.createOffer();
@@ -69,6 +72,12 @@ function useWebRTC() {
     if (pcRef.current) {
       pcRef.current.close();
       pcRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current
+        .getTracks()
+        .forEach((track: MediaStreamTrack) => track.stop());
+      streamRef.current = null;
     }
   }, []);
 
@@ -117,6 +126,14 @@ function useWebRTC() {
           break;
       }
     };
+
+    socket.on("message", (message) => {
+      const { key, role, payload } = message;
+      console.log("message", message);
+      if (key === KEY.CLOSE) {
+        closeScreenShare();
+      }
+    });
 
     return () => {
       closeScreenShare();
