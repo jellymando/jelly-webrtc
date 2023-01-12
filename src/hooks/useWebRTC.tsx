@@ -9,8 +9,8 @@ function useWebRTC() {
   const signaling = new BroadcastChannel("webrtc");
   const location = useLocation();
   const { socket, sendMessage } = useSocket();
-  const pcRef = useRef<any>(null);
-  const streamRef = useRef<any>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const role = useMemo(
     () =>
       location.pathname.replace("/", "") === ROLE.CLIENT
@@ -35,7 +35,7 @@ function useWebRTC() {
     };
 
     pcRef.current.addEventListener("connectionstatechange", (event: any) => {
-      console.log("connectionstatechange", pcRef.current.connectionState);
+      console.log("connectionstatechange", pcRef.current!.connectionState);
     });
   }, []);
 
@@ -59,13 +59,13 @@ function useWebRTC() {
       streamRef.current
         .getTracks()
         .forEach((track: any) =>
-          pcRef.current.addTrack(track, streamRef.current)
+          pcRef.current!.addTrack(track, streamRef.current!)
         );
     }
 
-    const offer = await pcRef.current.createOffer();
+    const offer = await pcRef.current!.createOffer();
     signaling.postMessage({ type: "offer", sdp: offer.sdp });
-    await pcRef.current.setLocalDescription(offer);
+    await pcRef.current!.setLocalDescription(offer);
   }, []);
 
   const closeScreenShare = useCallback(() => {
@@ -87,26 +87,28 @@ function useWebRTC() {
     const $video = document.getElementById("video") as HTMLVideoElement;
     console.log("$video", $video);
     if ($video) {
-      pcRef.current.ontrack = (e: any) => {
+      pcRef.current!.ontrack = (e: any) => {
         console.log("ontrack", e);
         $video.srcObject = e.streams[0];
       };
     }
 
-    await pcRef.current.setRemoteDescription(offer);
-    const answer = await pcRef.current.createAnswer();
+    await pcRef.current!.setRemoteDescription(offer);
+    const answer = await pcRef.current!.createAnswer();
     signaling.postMessage({ type: "answer", sdp: answer.sdp });
-    await pcRef.current.setLocalDescription(answer);
+    await pcRef.current!.setLocalDescription(answer);
   }, []);
 
   const handleAnswer = useCallback(async (answer: any) => {
     console.log("role", role);
-    await pcRef.current.setRemoteDescription(answer);
+    await pcRef.current!.setRemoteDescription(answer);
   }, []);
 
   const handleCandidate = useCallback(async (candidate: any) => {
     console.log("role", role);
-    await pcRef.current.addIceCandidate(candidate.candidate ? candidate : null);
+    await pcRef.current!.addIceCandidate(
+      candidate.candidate ? candidate : null
+    );
   }, []);
 
   useEffect(() => {
