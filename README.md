@@ -18,5 +18,5 @@
 - [ ] UI 마크업
 
 ### 메모
-- signaling message 순서 
+- message 주고받는 순서 
   - offer(CLIENT->VIEWER)-> answer(VIEWER->CLIENT) -> candidate(CLIENT->VIEWER) -> candidate(VIEWER->CLIENT)
