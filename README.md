@@ -13,3 +13,7 @@
 - [ ] 일정 시간동안 상대방으로부터 ping이 오지 않으면 피어 연결 끊기
 - [ ] 화면공유 중인지 체크하여 중복 연결 막기
 - [ ] UI 마크업
+
+### 메모
+- signaling message 순서 
+  - offer(CLIENT->VIEWER)-> answer(VIEWER->CLIENT) -> candidate(CLIENT->VIEWER) -> candidate(VIEWER->CLIENT)
