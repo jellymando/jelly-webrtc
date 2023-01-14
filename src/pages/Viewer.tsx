@@ -1,10 +1,11 @@
 import React, { useRef, useEffect } from "react";
+import { useSetRecoilState } from "recoil";
 import styled from "styled-components";
 
+import { videoAtom } from "store/atoms/rtc";
 import { COLOR } from "constants/style";
 import { ROLE } from "constants/message";
 
-import useWebRTC from "hooks/useWebRTC";
 import Nav from "components/Nav";
 
 const Container = styled.div`
@@ -32,14 +33,12 @@ const Video = styled.video`
 const Canvas = styled.canvas``;
 
 function Viewer() {
-  const { isSharing, initRTC } = useWebRTC();
+  const setVideo = useSetRecoilState(videoAtom);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (videoRef.current) {
-      initRTC({ video: videoRef.current, role: ROLE.VIEWER });
-    }
+    setVideo(videoRef.current);
   }, []);
 
   return (
@@ -48,7 +47,7 @@ function Viewer() {
         <Canvas ref={canvasRef} />
         <Video ref={videoRef} autoPlay playsInline muted />
       </VideoWrap>
-      {isSharing && <Nav ref={videoRef} role={ROLE.VIEWER} />}
+      <Nav role={ROLE.VIEWER} />
     </Container>
   );
 }

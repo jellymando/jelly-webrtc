@@ -1,27 +1,18 @@
-import React, { useRef, useState, useCallback, useEffect } from "react";
-import { EVENT, ROLE } from "constants/message";
+import React, { useRef, useState, useCallback } from "react";
+import { useRecoilValue } from "recoil";
+
+import { socket } from "store/socket";
+import { videoAtom } from "store/atoms/rtc";
+import { EVENT } from "constants/message";
 import { CONNECTION_STATE } from "constants/rtc";
 import useSocket from "hooks/useSocket";
 
 function useWebRTC() {
-  const { socket, sendMessage } = useSocket();
+  const { sendMessage } = useSocket();
+  const video = useRecoilValue(videoAtom);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [role, setRole] = useState("");
   const [isSharing, setIsSharing] = useState(false);
-
-  const initRTC = useCallback(
-    ({ role, video }: { role: string; video: HTMLVideoElement }) => {
-      setRole(role);
-      videoRef.current = video;
-
-      socket.on("message", async (message) => {
-        await handleMessage(message);
-      });
-    },
-    []
-  );
 
   const createPeerConnection = useCallback(() => {
     pcRef.current = new RTCPeerConnection();
@@ -67,8 +58,8 @@ function useWebRTC() {
           pcRef.current!.addTrack(track, streamRef.current!)
         );
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = streamRef.current;
+      if (video) {
+        video.srcObject = streamRef.current;
       }
 
       const offer = await pcRef.current!.createOffer();
@@ -80,7 +71,7 @@ function useWebRTC() {
     } else {
       console.log("GET STREAM ERROR");
     }
-  }, []);
+  }, [video]);
 
   const closeScreenShare = useCallback(() => {
     if (pcRef.current) {
@@ -94,8 +85,7 @@ function useWebRTC() {
       streamRef.current = null;
     }
     setIsSharing(false);
-    if (role === ROLE.CLIENT) sendMessage({ key: EVENT.CLOSE });
-  }, [role]);
+  }, []);
 
   const handleConnectionStateChange = useCallback((state: string) => {
     switch (state) {
@@ -117,11 +107,11 @@ function useWebRTC() {
       switch (key) {
         case EVENT.OFFER:
           createPeerConnection();
-          if (videoRef.current) {
-            pcRef.current!.ontrack = (e: RTCTrackEvent) => {
-              videoRef.current!.srcObject = e.streams[0];
-            };
-          }
+          pcRef.current!.ontrack = (e: RTCTrackEvent) => {
+            if (video) {
+              video.srcObject = e.streams[0];
+            }
+          };
           await pcRef.current!.setRemoteDescription(payload);
           const answer = await pcRef.current!.createAnswer();
           sendMessage({
@@ -145,8 +135,14 @@ function useWebRTC() {
           break;
       }
     },
-    []
+    [video]
   );
+
+  const initRTC = useCallback(() => {
+    socket.on("message", async (message: { key?: string; payload?: any }) => {
+      await handleMessage(message);
+    });
+  }, [handleMessage]);
 
   return { isSharing, initRTC, startScreenShare, closeScreenShare };
 }

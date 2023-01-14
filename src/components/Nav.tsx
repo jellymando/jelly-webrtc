@@ -1,9 +1,12 @@
-import React, { forwardRef, useCallback, useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
+import { useRecoilValue } from "recoil";
 import styled from "styled-components";
 
+import { videoAtom } from "store/atoms/rtc";
 import { COLOR } from "constants/style";
-import { ROLE } from "constants/message";
+import { EVENT, ROLE } from "constants/message";
 
+import useSocket from "hooks/useSocket";
 import useWebRTC from "hooks/useWebRTC";
 
 const Container = styled.div`
@@ -16,39 +19,40 @@ const Button = styled.button`
   background-color: ${COLOR.BLUE2};
 `;
 
-const Nav = forwardRef<HTMLVideoElement | null, { role: string }>(
-  ({ role }: { role: string }, ref) => {
-    const { isSharing, initRTC, startScreenShare, closeScreenShare } =
-      useWebRTC();
+const Nav = ({ role }: { role: string }) => {
+  const video = useRecoilValue(videoAtom);
+  const { sendMessage } = useSocket();
+  const { isSharing, initRTC, startScreenShare, closeScreenShare } =
+    useWebRTC();
 
-    const handleScreenShare = useCallback(async () => {
-      if (isSharing) {
-        closeScreenShare();
-      } else {
-        await startScreenShare();
-      }
-    }, [isSharing]);
+  const handleScreenShare = useCallback(async () => {
+    if (isSharing) {
+      closeScreenShare();
+      sendMessage({ key: EVENT.CLOSE });
+    } else {
+      await startScreenShare();
+    }
+  }, [isSharing, startScreenShare, closeScreenShare]);
 
-    useEffect(() => {
-      if (typeof ref !== "function") {
-        if (ref!.current) initRTC({ role: ROLE.CLIENT, video: ref!.current });
-      }
-    }, []);
+  useEffect(() => {
+    if (video) {
+      initRTC();
+    }
+  }, [video]);
 
-    return (
-      <Container>
-        {role === ROLE.CLIENT && (
-          <Button onClick={handleScreenShare}>화면공유</Button>
-        )}
-        {role === ROLE.VIEWER && (
-          <>
-            <Button onClick={() => {}}>그리기</Button>
-            <Button onClick={() => {}}>음성채팅</Button>
-          </>
-        )}
-      </Container>
-    );
-  }
-);
+  return (
+    <Container>
+      {role === ROLE.CLIENT && (
+        <Button onClick={handleScreenShare}>화면공유</Button>
+      )}
+      {role === ROLE.VIEWER && (
+        <>
+          <Button onClick={() => {}}>그리기</Button>
+          <Button onClick={() => {}}>음성채팅</Button>
+        </>
+      )}
+    </Container>
+  );
+};
 
 export default Nav;

@@ -1,9 +1,7 @@
-import React, { useCallback, useEffect } from "react";
-import io from "socket.io-client";
+import React, { useCallback } from "react";
 
+import { socket } from "store/socket";
 import { EVENT } from "constants/message";
-
-const socket = io("http://localhost:4000");
 
 function useSocket() {
   const sendMessage = useCallback(
@@ -13,26 +11,7 @@ function useSocket() {
     []
   );
 
-  useEffect(() => {
-    socket.on("connect", () => {
-      console.log("%csocket is connected", "color:red");
-    });
-
-    socket.on("disconnect", () => {
-      console.log("%csocket is disconnected", "color:red");
-    });
-
-    socket.on("message", (message) => {
-      console.log("message", message);
-    });
-
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-    };
-  }, []);
-
-  return { socket, sendMessage };
+  return { sendMessage };
 }
 
 export default useSocket;

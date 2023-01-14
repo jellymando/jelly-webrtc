@@ -1,6 +1,8 @@
 import React, { useRef, useEffect } from "react";
+import { useSetRecoilState } from "recoil";
 import styled from "styled-components";
 
+import { videoAtom } from "store/atoms/rtc";
 import { COLOR } from "constants/style";
 import { ROLE } from "constants/message";
 
@@ -27,14 +29,19 @@ const VideoWrap = styled.div`
 const Video = styled.video``;
 
 function Client() {
+  const setVideo = useSetRecoilState(videoAtom);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    setVideo(videoRef.current);
+  }, []);
 
   return (
     <Container>
       <VideoWrap>
         <Video ref={videoRef} autoPlay playsInline muted />
       </VideoWrap>
-      <Nav ref={videoRef} role={ROLE.CLIENT} />
+      <Nav role={ROLE.CLIENT} />
     </Container>
   );
 }
