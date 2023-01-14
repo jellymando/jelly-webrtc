@@ -26,12 +26,14 @@ const VideoWrap = styled.div`
 const Video = styled.video``;
 
 function Viewer() {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
   return (
     <Container>
       <VideoWrap>
-        <Video id="video" autoPlay playsInline muted />
+        <Video ref={videoRef} autoPlay playsInline muted />
       </VideoWrap>
-      <Nav />
+      <Nav ref={videoRef} />
     </Container>
   );
 }

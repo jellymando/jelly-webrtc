@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import styled from "styled-components";
 
 import { COLOR } from "constants/style";
-import { KEY } from "constants/message";
+import { ROLE } from "constants/message";
 
 import useSocket from "hooks/useSocket";
 import useWebRTC from "hooks/useWebRTC";
@@ -34,7 +34,7 @@ const Canvas = styled.canvas``;
 
 function Viewer() {
   const { socket } = useSocket();
-  const { startScreenShare } = useWebRTC();
+  const { initRTC } = useWebRTC();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -49,11 +49,17 @@ function Viewer() {
   //   });
   // }, []);
 
+  useEffect(() => {
+    if (videoRef.current) {
+      initRTC({ video: videoRef.current, role: ROLE.VIEWER });
+    }
+  }, []);
+
   return (
     <Container>
       <VideoWrap>
         <Canvas ref={canvasRef} />
-        <Video id="video" ref={videoRef} autoPlay playsInline muted />
+        <Video ref={videoRef} autoPlay playsInline muted />
       </VideoWrap>
     </Container>
   );

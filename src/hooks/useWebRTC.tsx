@@ -1,21 +1,20 @@
-import React, { useRef, useMemo, useCallback, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-
-import { KEY, ROLE } from "constants/message";
-
+import React, { useRef, useState, useCallback, useEffect } from "react";
+import { KEY } from "constants/message";
 import useSocket from "hooks/useSocket";
 
 function useWebRTC() {
   const signaling = new BroadcastChannel("webrtc");
-  const location = useLocation();
   const { socket, sendMessage } = useSocket();
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const role = useMemo(
-    () =>
-      location.pathname.replace("/", "") === ROLE.CLIENT
-        ? ROLE.CLIENT
-        : ROLE.VIEWER,
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [role, setRole] = useState("");
+
+  const initRTC = useCallback(
+    ({ role, video }: { role: string; video: HTMLVideoElement }) => {
+      setRole(role);
+      videoRef.current = video;
+    },
     []
   );
 
@@ -45,12 +44,6 @@ function useWebRTC() {
       video: true
     });
 
-    const $video = document.getElementById("video") as HTMLVideoElement;
-    if ($video && streamRef.current) {
-      $video.srcObject = streamRef.current;
-      sendMessage({ payload: "클라이언트가 화면을 공유했습니다." });
-    }
-
     if (!pcRef.current) {
       createPeerConnection();
     }
@@ -61,6 +54,11 @@ function useWebRTC() {
         .forEach((track: any) =>
           pcRef.current!.addTrack(track, streamRef.current!)
         );
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      sendMessage({ payload: "클라이언트가 화면을 공유했습니다." });
     }
 
     const offer = await pcRef.current!.createOffer();
@@ -84,12 +82,10 @@ function useWebRTC() {
   const handleOffer = useCallback(async (offer: any) => {
     createPeerConnection();
 
-    const $video = document.getElementById("video") as HTMLVideoElement;
-    console.log("$video", $video);
-    if ($video) {
+    if (videoRef.current) {
       pcRef.current!.ontrack = (e: any) => {
         console.log("ontrack", e);
-        $video.srcObject = e.streams[0];
+        videoRef.current!.srcObject = e.streams[0];
       };
     }
 
@@ -100,12 +96,10 @@ function useWebRTC() {
   }, []);
 
   const handleAnswer = useCallback(async (answer: any) => {
-    console.log("role", role);
     await pcRef.current!.setRemoteDescription(answer);
   }, []);
 
   const handleCandidate = useCallback(async (candidate: any) => {
-    console.log("role", role);
     await pcRef.current!.addIceCandidate(
       candidate.candidate ? candidate : null
     );
@@ -142,7 +136,7 @@ function useWebRTC() {
     };
   }, []);
 
-  return { startScreenShare, closeScreenShare };
+  return { initRTC, startScreenShare, closeScreenShare };
 }
 
 export default useWebRTC;
