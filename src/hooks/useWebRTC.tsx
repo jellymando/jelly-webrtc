@@ -1,11 +1,10 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import { EVENT } from "constants/message";
+import { EVENT, ROLE } from "constants/message";
 import { CONNECTION_STATE } from "constants/rtc";
 import useSocket from "hooks/useSocket";
 
 function useWebRTC() {
   const { socket, sendMessage } = useSocket();
-  const signaling = new BroadcastChannel("webrtc");
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -16,26 +15,35 @@ function useWebRTC() {
     ({ role, video }: { role: string; video: HTMLVideoElement }) => {
       setRole(role);
       videoRef.current = video;
+
+      socket.on("message", async (message) => {
+        await handleMessage(message);
+      });
     },
     []
   );
 
   const createPeerConnection = useCallback(() => {
     pcRef.current = new RTCPeerConnection();
-    pcRef.current.onicecandidate = (e: any) => {
+    pcRef.current.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
       const message = {
-        type: "candidate",
+        type: EVENT.CANDIDATE,
         candidate: null
-      } as any;
+      } as {
+        type: string;
+        candidate: string | null;
+        sdpMid?: string | null;
+        sdpMLineIndex: number | null;
+      };
       if (e.candidate) {
         message.candidate = e.candidate.candidate;
         message.sdpMid = e.candidate.sdpMid;
         message.sdpMLineIndex = e.candidate.sdpMLineIndex;
       }
-      signaling.postMessage(message);
+      sendMessage({ key: EVENT.CANDIDATE, payload: message });
     };
 
-    pcRef.current.addEventListener("connectionstatechange", (event: any) => {
+    pcRef.current.addEventListener("connectionstatechange", (event: Event) => {
       const connectionState = pcRef.current!.connectionState;
       console.log("connectionstatechange", connectionState);
       handleConnectionStateChange(connectionState);
@@ -55,7 +63,7 @@ function useWebRTC() {
     if (streamRef.current) {
       streamRef.current
         .getTracks()
-        .forEach((track: any) =>
+        .forEach((track: MediaStreamTrack) =>
           pcRef.current!.addTrack(track, streamRef.current!)
         );
 
@@ -64,7 +72,10 @@ function useWebRTC() {
       }
 
       const offer = await pcRef.current!.createOffer();
-      signaling.postMessage({ type: "offer", sdp: offer.sdp });
+      sendMessage({
+        key: EVENT.OFFER,
+        payload: { type: EVENT.OFFER, sdp: offer.sdp }
+      });
       await pcRef.current!.setLocalDescription(offer);
     } else {
       console.log("GET STREAM ERROR");
@@ -83,33 +94,8 @@ function useWebRTC() {
       streamRef.current = null;
     }
     setIsSharing(false);
-  }, []);
-
-  const handleOffer = useCallback(async (offer: any) => {
-    createPeerConnection();
-
-    if (videoRef.current) {
-      pcRef.current!.ontrack = (e: any) => {
-        console.log("ontrack", e);
-        videoRef.current!.srcObject = e.streams[0];
-      };
-    }
-
-    await pcRef.current!.setRemoteDescription(offer);
-    const answer = await pcRef.current!.createAnswer();
-    signaling.postMessage({ type: "answer", sdp: answer.sdp });
-    await pcRef.current!.setLocalDescription(answer);
-  }, []);
-
-  const handleAnswer = useCallback(async (answer: any) => {
-    await pcRef.current!.setRemoteDescription(answer);
-  }, []);
-
-  const handleCandidate = useCallback(async (candidate: any) => {
-    await pcRef.current!.addIceCandidate(
-      candidate.candidate ? candidate : null
-    );
-  }, []);
+    if (role === ROLE.CLIENT) sendMessage({ key: EVENT.CLOSE });
+  }, [role]);
 
   const handleConnectionStateChange = useCallback((state: string) => {
     switch (state) {
@@ -125,37 +111,42 @@ function useWebRTC() {
     }
   }, []);
 
-  useEffect(() => {
-    // offer(CLIENT->VIEWER)-> answer(VIEWER->CLIENT) -> candidate(CLIENT->VIEWER) -> candidate(VIEWER->CLIENT)
-    signaling.onmessage = async (e) => {
-      console.log("e.data.type, role", e.data.type, role);
-      switch (e.data.type) {
-        case "offer":
-          await handleOffer(e.data);
+  const handleMessage = useCallback(
+    async (message: { key?: string; payload?: any }) => {
+      const { key, payload } = message;
+      switch (key) {
+        case EVENT.OFFER:
+          createPeerConnection();
+          if (videoRef.current) {
+            pcRef.current!.ontrack = (e: RTCTrackEvent) => {
+              videoRef.current!.srcObject = e.streams[0];
+            };
+          }
+          await pcRef.current!.setRemoteDescription(payload);
+          const answer = await pcRef.current!.createAnswer();
+          sendMessage({
+            key: EVENT.ANSWER,
+            payload: { type: EVENT.ANSWER, sdp: answer.sdp }
+          });
+          await pcRef.current!.setLocalDescription(answer);
           break;
-        case "answer":
-          await handleAnswer(e.data);
+        case EVENT.ANSWER:
+          await pcRef.current!.setRemoteDescription(payload);
           break;
-        case "candidate":
-          await handleCandidate(e.data);
+        case EVENT.CANDIDATE:
+          await pcRef.current!.addIceCandidate(
+            payload.candidate ? payload : null
+          );
+          break;
+        case EVENT.CLOSE:
+          closeScreenShare();
           break;
         default:
           break;
       }
-    };
-
-    socket.on("message", (message) => {
-      const { key, role, payload } = message;
-      console.log("message", message);
-      if (key === EVENT.CLOSE) {
-        closeScreenShare();
-      }
-    });
-
-    return () => {
-      closeScreenShare();
-    };
-  }, []);
+    },
+    []
+  );
 
   return { isSharing, initRTC, startScreenShare, closeScreenShare };
 }

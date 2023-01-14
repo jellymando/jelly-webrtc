@@ -1,6 +1,8 @@
 export const EVENT = {
   MESSAGE: "meesage",
-  STREAM_ERROR: "streamError",
+  OFFER: "offer",
+  ANSWER: "answer",
+  CANDIDATE: "candidate",
   CLOSE: "close"
 };
 

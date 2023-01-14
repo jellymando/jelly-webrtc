@@ -4,7 +4,6 @@ import styled from "styled-components";
 import { COLOR } from "constants/style";
 import { ROLE } from "constants/message";
 
-import useSocket from "hooks/useSocket";
 import useWebRTC from "hooks/useWebRTC";
 import Nav from "components/Nav";
 
@@ -33,31 +32,15 @@ const Video = styled.video`
 const Canvas = styled.canvas``;
 
 function Viewer() {
-  const { socket } = useSocket();
   const { isSharing, initRTC } = useWebRTC();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  // useEffect(() => {
-  //   socket.on("message", (message) => {
-  //     const { key, role, payload } = message;
-  //     console.log("message", message);
-
-  //     if (key === KEY.STREAM && videoRef.current) {
-  //       videoRef.current.srcObject = payload;
-  //     }
-  //   });
-  // }, []);
 
   useEffect(() => {
     if (videoRef.current) {
       initRTC({ video: videoRef.current, role: ROLE.VIEWER });
     }
   }, []);
-
-  useEffect(() => {
-    console.log("isSharing", isSharing);
-  }, [isSharing]);
 
   return (
     <Container>

@@ -1,10 +1,9 @@
-import React, { forwardRef, useState, useCallback, useEffect } from "react";
+import React, { forwardRef, useCallback, useEffect } from "react";
 import styled from "styled-components";
 
 import { COLOR } from "constants/style";
-import { EVENT, ROLE } from "constants/message";
+import { ROLE } from "constants/message";
 
-import useSocket from "hooks/useSocket";
 import useWebRTC from "hooks/useWebRTC";
 
 const Container = styled.div`
@@ -19,16 +18,14 @@ const Button = styled.button`
 
 const Nav = forwardRef<HTMLVideoElement | null, { role: string }>(
   ({ role }: { role: string }, ref) => {
-    const { sendMessage } = useSocket();
     const { isSharing, initRTC, startScreenShare, closeScreenShare } =
       useWebRTC();
 
-    const handleScreenShare = useCallback(() => {
+    const handleScreenShare = useCallback(async () => {
       if (isSharing) {
         closeScreenShare();
-        sendMessage({ key: EVENT.CLOSE });
       } else {
-        startScreenShare();
+        await startScreenShare();
       }
     }, [isSharing]);
 

@@ -23,7 +23,6 @@ function useSocket() {
     });
 
     socket.on("message", (message) => {
-      const { key, role, payload } = message;
       console.log("message", message);
     });
 

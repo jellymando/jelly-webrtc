@@ -26,7 +26,7 @@ const VideoWrap = styled.div`
 
 const Video = styled.video``;
 
-function Viewer() {
+function Client() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   return (
@@ -39,4 +39,4 @@ function Viewer() {
   );
 }
 
-export default Viewer;
+export default Client;
