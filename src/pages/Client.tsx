@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from "react";
 import styled from "styled-components";
 
 import { COLOR } from "constants/style";
+import { ROLE } from "constants/message";
 
 import Nav from "components/Nav";
 
@@ -33,7 +34,7 @@ function Viewer() {
       <VideoWrap>
         <Video ref={videoRef} autoPlay playsInline muted />
       </VideoWrap>
-      <Nav ref={videoRef} />
+      <Nav ref={videoRef} role={ROLE.CLIENT} />
     </Container>
   );
 }

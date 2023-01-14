@@ -34,7 +34,7 @@ const Canvas = styled.canvas``;
 
 function Viewer() {
   const { socket } = useSocket();
-  const { initRTC } = useWebRTC();
+  const { isSharing, initRTC } = useWebRTC();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -55,12 +55,17 @@ function Viewer() {
     }
   }, []);
 
+  useEffect(() => {
+    console.log("isSharing", isSharing);
+  }, [isSharing]);
+
   return (
     <Container>
       <VideoWrap>
         <Canvas ref={canvasRef} />
         <Video ref={videoRef} autoPlay playsInline muted />
       </VideoWrap>
+      {isSharing && <Nav ref={videoRef} role={ROLE.VIEWER} />}
     </Container>
   );
 }

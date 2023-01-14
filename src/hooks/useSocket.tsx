@@ -1,23 +1,16 @@
-import React, { useRef, useCallback, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useCallback, useEffect } from "react";
 import io from "socket.io-client";
 
-import { KEY, ROLE } from "constants/message";
+import { EVENT } from "constants/message";
 
 const socket = io("http://localhost:4000");
 
 function useSocket() {
-  const location = useLocation();
-
   const sendMessage = useCallback(
-    ({ key = KEY.MESSAGE, payload }: { key?: string; payload?: any }) => {
-      const role =
-        location.pathname.replace("/", "") === ROLE.CLIENT
-          ? ROLE.CLIENT
-          : ROLE.VIEWER;
-      socket.emit("sendMessage", { key, role, payload });
+    ({ key = EVENT.MESSAGE, payload }: { key?: string; payload?: any }) => {
+      socket.emit("sendMessage", { key, payload });
     },
-    [location.pathname, socket]
+    []
   );
 
   useEffect(() => {

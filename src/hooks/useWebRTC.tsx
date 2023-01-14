@@ -1,14 +1,16 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import { KEY } from "constants/message";
+import { EVENT } from "constants/message";
+import { CONNECTION_STATE } from "constants/rtc";
 import useSocket from "hooks/useSocket";
 
 function useWebRTC() {
-  const signaling = new BroadcastChannel("webrtc");
   const { socket, sendMessage } = useSocket();
+  const signaling = new BroadcastChannel("webrtc");
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [role, setRole] = useState("");
+  const [isSharing, setIsSharing] = useState(false);
 
   const initRTC = useCallback(
     ({ role, video }: { role: string; video: HTMLVideoElement }) => {
@@ -34,7 +36,9 @@ function useWebRTC() {
     };
 
     pcRef.current.addEventListener("connectionstatechange", (event: any) => {
-      console.log("connectionstatechange", pcRef.current!.connectionState);
+      const connectionState = pcRef.current!.connectionState;
+      console.log("connectionstatechange", connectionState);
+      handleConnectionStateChange(connectionState);
     });
   }, []);
 
@@ -58,12 +62,13 @@ function useWebRTC() {
       if (videoRef.current) {
         videoRef.current.srcObject = streamRef.current;
       }
-      sendMessage({ payload: "클라이언트가 화면을 공유했습니다." });
-    }
 
-    const offer = await pcRef.current!.createOffer();
-    signaling.postMessage({ type: "offer", sdp: offer.sdp });
-    await pcRef.current!.setLocalDescription(offer);
+      const offer = await pcRef.current!.createOffer();
+      signaling.postMessage({ type: "offer", sdp: offer.sdp });
+      await pcRef.current!.setLocalDescription(offer);
+    } else {
+      console.log("GET STREAM ERROR");
+    }
   }, []);
 
   const closeScreenShare = useCallback(() => {
@@ -77,6 +82,7 @@ function useWebRTC() {
         .forEach((track: MediaStreamTrack) => track.stop());
       streamRef.current = null;
     }
+    setIsSharing(false);
   }, []);
 
   const handleOffer = useCallback(async (offer: any) => {
@@ -105,9 +111,24 @@ function useWebRTC() {
     );
   }, []);
 
+  const handleConnectionStateChange = useCallback((state: string) => {
+    switch (state) {
+      case CONNECTION_STATE.CONNECTED:
+        setIsSharing(true);
+        break;
+      case CONNECTION_STATE.DISCONNECTED:
+      case CONNECTION_STATE.FAILED:
+        setIsSharing(false);
+        break;
+      default:
+        break;
+    }
+  }, []);
+
   useEffect(() => {
+    // offer(CLIENT->VIEWER)-> answer(VIEWER->CLIENT) -> candidate(CLIENT->VIEWER) -> candidate(VIEWER->CLIENT)
     signaling.onmessage = async (e) => {
-      console.log("e.data.type", e.data.type, pcRef.current);
+      console.log("e.data.type, role", e.data.type, role);
       switch (e.data.type) {
         case "offer":
           await handleOffer(e.data);
@@ -126,7 +147,7 @@ function useWebRTC() {
     socket.on("message", (message) => {
       const { key, role, payload } = message;
       console.log("message", message);
-      if (key === KEY.CLOSE) {
+      if (key === EVENT.CLOSE) {
         closeScreenShare();
       }
     });
@@ -136,7 +157,7 @@ function useWebRTC() {
     };
   }, []);
 
-  return { initRTC, startScreenShare, closeScreenShare };
+  return { isSharing, initRTC, startScreenShare, closeScreenShare };
 }
 
 export default useWebRTC;

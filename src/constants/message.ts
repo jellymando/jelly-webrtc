@@ -1,5 +1,6 @@
-export const KEY = {
+export const EVENT = {
   MESSAGE: "meesage",
+  STREAM_ERROR: "streamError",
   CLOSE: "close"
 };
 
