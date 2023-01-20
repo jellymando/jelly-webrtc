@@ -3,8 +3,8 @@ import { useSetRecoilState } from "recoil";
 import styled from "styled-components";
 
 import { videoAtom } from "store/atoms/rtc";
-import { COLOR } from "constants/style";
-import { ROLE } from "constants/message";
+import { COLOR } from "types/style";
+import { ROLE } from "types/message";
 
 import Nav from "components/Nav";
 
@@ -38,6 +38,7 @@ function Viewer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    if (!videoRef.current) return;
     setVideo(videoRef.current);
   }, []);
 

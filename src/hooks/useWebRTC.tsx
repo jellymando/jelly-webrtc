@@ -3,12 +3,16 @@ import { useRecoilValue } from "recoil";
 
 import { socket } from "store/socket";
 import { videoAtom } from "store/atoms/rtc";
-import { EVENT } from "constants/message";
-import { CONNECTION_STATE } from "constants/rtc";
-import useSocket from "hooks/useSocket";
+import { CONNECTION_EVENT, CONNECTION_STATE } from "types/rtc";
+
+type messageType = {
+  type: string;
+  candidate: string | null;
+  sdpMid?: string | null;
+  sdpMLineIndex: number | null;
+};
 
 function useWebRTC() {
-  const { sendMessage } = useSocket();
   const video = useRecoilValue(videoAtom);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -18,20 +22,16 @@ function useWebRTC() {
     pcRef.current = new RTCPeerConnection();
     pcRef.current.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
       const message = {
-        type: EVENT.CANDIDATE,
+        type: CONNECTION_EVENT.CANDIDATE,
         candidate: null
-      } as {
-        type: string;
-        candidate: string | null;
-        sdpMid?: string | null;
-        sdpMLineIndex: number | null;
-      };
+      } as messageType;
+
       if (e.candidate) {
         message.candidate = e.candidate.candidate;
         message.sdpMid = e.candidate.sdpMid;
         message.sdpMLineIndex = e.candidate.sdpMLineIndex;
       }
-      sendMessage({ key: EVENT.CANDIDATE, payload: message });
+      socket.emit(CONNECTION_EVENT.CANDIDATE, message);
     };
 
     pcRef.current.addEventListener("connectionstatechange", (event: Event) => {
@@ -63,9 +63,9 @@ function useWebRTC() {
       }
 
       const offer = await pcRef.current!.createOffer();
-      sendMessage({
-        key: EVENT.OFFER,
-        payload: { type: EVENT.OFFER, sdp: offer.sdp }
+      socket.emit(CONNECTION_EVENT.OFFER, {
+        type: CONNECTION_EVENT.OFFER,
+        sdp: offer.sdp
       });
       await pcRef.current!.setLocalDescription(offer);
     } else {
@@ -87,62 +87,56 @@ function useWebRTC() {
     setIsSharing(false);
   }, []);
 
-  const handleConnectionStateChange = useCallback((state: string) => {
-    switch (state) {
-      case CONNECTION_STATE.CONNECTED:
-        setIsSharing(true);
-        break;
-      case CONNECTION_STATE.DISCONNECTED:
-      case CONNECTION_STATE.FAILED:
-        setIsSharing(false);
-        break;
-      default:
-        break;
-    }
-  }, []);
-
-  const handleMessage = useCallback(
-    async (message: { key?: string; payload?: any }) => {
-      const { key, payload } = message;
-      switch (key) {
-        case EVENT.OFFER:
-          createPeerConnection();
-          pcRef.current!.ontrack = (e: RTCTrackEvent) => {
-            if (video) {
-              video.srcObject = e.streams[0];
-            }
-          };
-          await pcRef.current!.setRemoteDescription(payload);
-          const answer = await pcRef.current!.createAnswer();
-          sendMessage({
-            key: EVENT.ANSWER,
-            payload: { type: EVENT.ANSWER, sdp: answer.sdp }
-          });
-          await pcRef.current!.setLocalDescription(answer);
+  const handleConnectionStateChange = useCallback(
+    (state: RTCPeerConnectionState) => {
+      switch (state) {
+        case CONNECTION_STATE.CONNECTED:
+          setIsSharing(true);
           break;
-        case EVENT.ANSWER:
-          await pcRef.current!.setRemoteDescription(payload);
-          break;
-        case EVENT.CANDIDATE:
-          await pcRef.current!.addIceCandidate(
-            payload.candidate ? payload : null
-          );
-          break;
-        case EVENT.CLOSE:
-          closeScreenShare();
+        case CONNECTION_STATE.DISCONNECTED:
+        case CONNECTION_STATE.FAILED:
+          setIsSharing(false);
           break;
         default:
           break;
       }
     },
-    [video]
+    []
   );
 
   const initRTC = useCallback(() => {
-    socket.on("message", async (message: { key?: string; payload?: any }) => {
-      await handleMessage(message);
+    socket.on(CONNECTION_EVENT.OFFER, async (message) => {
+      console.log("OFFER", message);
+      createPeerConnection();
+      pcRef.current!.ontrack = (e: RTCTrackEvent) => {
+        if (video) {
+          video.srcObject = e.streams[0];
+        }
+      };
+      await pcRef.current!.setRemoteDescription(message);
+      const answer = await pcRef.current!.createAnswer();
+      socket.emit(CONNECTION_EVENT.ANSWER, {
+        type: CONNECTION_EVENT.ANSWER,
+        sdp: answer.sdp
+      });
+      await pcRef.current!.setLocalDescription(answer);
     });
-  }, [handleMessage]);
+
+    socket.on(CONNECTION_EVENT.ANSWER, async (message) => {
+      console.log("ANSWER", message);
+      await pcRef.current!.setRemoteDescription(message);
+    });
+
+    socket.on(CONNECTION_EVENT.CANDIDATE, async (message) => {
+      console.log("CANDIDATE", message);
+      await pcRef.current!.addIceCandidate(message.candidate ? message : null);
+    });
+
+    socket.on(CONNECTION_EVENT.CLOSE, async (message) => {
+      console.log("CLOSE", message);
+      closeScreenShare();
+    });
+  }, [video]);
 
   return { isSharing, initRTC, startScreenShare, closeScreenShare };
 }

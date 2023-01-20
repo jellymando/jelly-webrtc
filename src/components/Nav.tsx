@@ -2,11 +2,12 @@ import React, { useCallback, useEffect } from "react";
 import { useRecoilValue } from "recoil";
 import styled from "styled-components";
 
+import { socket } from "store/socket";
 import { videoAtom } from "store/atoms/rtc";
-import { COLOR } from "constants/style";
-import { EVENT, ROLE } from "constants/message";
+import { COLOR } from "types/style";
+import { ROLE } from "types/message";
+import { CONNECTION_EVENT } from "types/rtc";
 
-import useSocket from "hooks/useSocket";
 import useWebRTC from "hooks/useWebRTC";
 
 const Container = styled.div`
@@ -19,16 +20,15 @@ const Button = styled.button`
   background-color: ${COLOR.BLUE2};
 `;
 
-const Nav = ({ role }: { role: string }) => {
+const Nav = ({ role }: { role: ROLE }) => {
   const video = useRecoilValue(videoAtom);
-  const { sendMessage } = useSocket();
   const { isSharing, initRTC, startScreenShare, closeScreenShare } =
     useWebRTC();
 
   const handleScreenShare = useCallback(async () => {
     if (isSharing) {
       closeScreenShare();
-      sendMessage({ key: EVENT.CLOSE });
+      socket.emit(CONNECTION_EVENT.CLOSE);
     } else {
       await startScreenShare();
     }

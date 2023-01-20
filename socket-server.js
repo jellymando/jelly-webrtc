@@ -3,6 +3,7 @@ const app = express();
 const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
+
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:3000"
@@ -12,9 +13,20 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   // socket.join("jelly room");
 
-  socket.on("sendMessage", (message) => {
-    // 본인을 제외한 소켓에 메세지 전송
-    socket.broadcast.emit("message", message);
+  socket.on("offer", (message) => {
+    socket.broadcast.emit("offer", message);
+  });
+
+  socket.on("answer", (message) => {
+    socket.broadcast.emit("answer", message);
+  });
+
+  socket.on("candidate", (message) => {
+    socket.broadcast.emit("candidate", message);
+  });
+
+  socket.on("close", (message) => {
+    socket.broadcast.emit("close", message);
   });
 
   // io.to("jelly room").emit("message", "클라이언트 들어옴");
