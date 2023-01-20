@@ -29,6 +29,14 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("close", message);
   });
 
+  socket.on("play", (message) => {
+    io.emit("play", message);
+  });
+
+  socket.on("pause", (message) => {
+    io.emit("pause", message);
+  });
+
   // io.to("jelly room").emit("message", "클라이언트 들어옴");
 });
 

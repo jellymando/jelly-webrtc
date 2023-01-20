@@ -6,7 +6,7 @@ import { socket } from "store/socket";
 import { videoAtom } from "store/atoms/rtc";
 import { COLOR } from "types/style";
 import { ROLE } from "types/message";
-import { CONNECTION_EVENT } from "types/rtc";
+import { CONNECTION_EVENT, VIDEO_EVENT } from "types/rtc";
 
 import useWebRTC from "hooks/useWebRTC";
 
@@ -34,6 +34,10 @@ const Nav = ({ role }: { role: ROLE }) => {
     }
   }, [isSharing, startScreenShare, closeScreenShare]);
 
+  const handleDraw = useCallback(() => {
+    socket.emit(VIDEO_EVENT.PAUSE);
+  }, []);
+
   useEffect(() => {
     if (video) {
       initRTC();
@@ -47,7 +51,7 @@ const Nav = ({ role }: { role: ROLE }) => {
       )}
       {role === ROLE.VIEWER && (
         <>
-          <Button onClick={() => {}}>그리기</Button>
+          <Button onClick={handleDraw}>그리기</Button>
           <Button onClick={() => {}}>음성채팅</Button>
         </>
       )}

@@ -6,7 +6,7 @@ export enum CONNECTION_EVENT {
 }
 
 export enum VIDEO_EVENT {
-  START = "start",
+  PLAY = "play",
   PAUSE = "pause"
 }
 
