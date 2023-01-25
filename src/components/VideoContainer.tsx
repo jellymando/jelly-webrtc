@@ -2,8 +2,8 @@ import React, { useRef, useCallback, useEffect } from "react";
 import { useSetRecoilState } from "recoil";
 import styled from "styled-components";
 
-import { socket } from "store/socket";
-import { videoAtom } from "store/atoms/rtc";
+import { socket } from "libs/socket";
+import { videoAtom } from "store/atoms/app";
 import { COLOR } from "types/style";
 import { VIDEO_EVENT } from "types/rtc";
 
@@ -49,12 +49,10 @@ function VideoContainer() {
     setVideo(videoRef.current);
 
     socket.on(VIDEO_EVENT.PLAY, async () => {
-      console.log("PLAY");
       await play();
     });
 
     socket.on(VIDEO_EVENT.PAUSE, () => {
-      console.log("PAUSE");
       videoRef.current!.pause();
     });
   }, []);

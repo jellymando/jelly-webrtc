@@ -11,35 +11,61 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  // socket.join("jelly room");
+  let connectedRoom;
+
+  socket.on("create", (role) => {
+    socket.broadcast.emit("create", role);
+  });
+
+  socket.on("join", (roomId) => {
+    if (!connectedRoom) {
+      socket.join(roomId);
+      socket.broadcast.emit("join", roomId);
+      connectedRoom = roomId;
+    }
+  });
+
+  socket.on("welcome", (roomId) => {
+    if (!connectedRoom) {
+      socket.join(roomId);
+      connectedRoom = roomId;
+      socket.broadcast.to(connectedRoom).emit("welcome", roomId);
+    }
+  });
+
+  socket.on("leave", (roomId) => {
+    if (connectedRoom === roomId) {
+      socket.broadcast.to(connectedRoom).emit("leave");
+      socket.leave(connectedRoom);
+      connectedRoom = null;
+    }
+  });
 
   socket.on("offer", (message) => {
-    socket.broadcast.emit("offer", message);
+    socket.broadcast.to(connectedRoom).emit("offer", message);
   });
 
   socket.on("answer", (message) => {
-    socket.broadcast.emit("answer", message);
+    socket.broadcast.to(connectedRoom).emit("answer", message);
   });
 
   socket.on("candidate", (message) => {
-    socket.broadcast.emit("candidate", message);
+    socket.broadcast.to(connectedRoom).emit("candidate", message);
   });
 
   socket.on("close", (message) => {
-    socket.broadcast.emit("close", message);
+    socket.broadcast.to(connectedRoom).emit("close", message);
   });
 
   socket.on("play", (message) => {
-    io.emit("play", message);
+    io.to(connectedRoom).emit("play", message);
   });
 
   socket.on("pause", (message) => {
-    io.emit("pause", message);
+    io.to(connectedRoom).emit("pause", message);
   });
-
-  // io.to("jelly room").emit("message", "클라이언트 들어옴");
 });
 
-server.listen(4000, () => {
-  console.log("listening on *:4000");
+server.listen(3030, () => {
+  console.log("listening on *:3030");
 });

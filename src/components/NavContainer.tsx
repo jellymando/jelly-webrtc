@@ -2,8 +2,8 @@ import React, { useCallback, useEffect } from "react";
 import { useRecoilValue } from "recoil";
 import styled from "styled-components";
 
-import { socket } from "store/socket";
-import { videoAtom } from "store/atoms/rtc";
+import { socket } from "libs/socket";
+import { videoAtom } from "store/atoms/app";
 import { COLOR } from "types/style";
 import { ROLE } from "types/message";
 import { CONNECTION_EVENT, VIDEO_EVENT } from "types/rtc";

@@ -1,8 +1,8 @@
 import React, { useRef, useState, useCallback } from "react";
 import { useRecoilValue } from "recoil";
 
-import { socket } from "store/socket";
-import { videoAtom } from "store/atoms/rtc";
+import { socket } from "libs/socket";
+import { videoAtom } from "store/atoms/app";
 import { CONNECTION_EVENT, CONNECTION_STATE } from "types/rtc";
 
 type messageType = {
@@ -106,7 +106,6 @@ function useWebRTC() {
 
   const initRTC = useCallback(() => {
     socket.on(CONNECTION_EVENT.OFFER, async (message) => {
-      console.log("OFFER", message);
       createPeerConnection();
       pcRef.current!.ontrack = (e: RTCTrackEvent) => {
         if (video) {
@@ -123,17 +122,14 @@ function useWebRTC() {
     });
 
     socket.on(CONNECTION_EVENT.ANSWER, async (message) => {
-      console.log("ANSWER", message);
       await pcRef.current!.setRemoteDescription(message);
     });
 
     socket.on(CONNECTION_EVENT.CANDIDATE, async (message) => {
-      console.log("CANDIDATE", message);
       await pcRef.current!.addIceCandidate(message.candidate ? message : null);
     });
 
     socket.on(CONNECTION_EVENT.CLOSE, async (message) => {
-      console.log("CLOSE", message);
       closeScreenShare();
     });
   }, [video]);
