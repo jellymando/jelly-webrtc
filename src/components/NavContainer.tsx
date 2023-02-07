@@ -3,10 +3,11 @@ import { useRecoilValue } from "recoil";
 import styled from "styled-components";
 
 import { socket } from "libs/socket";
-import { videoAtom } from "store/atoms/app";
+import { videoAtom } from "store/atoms/video";
 import { COLOR } from "types/style";
 import { ROLE } from "types/message";
-import { CONNECTION_EVENT, VIDEO_EVENT } from "types/rtc";
+import { CONNECTION_EVENT } from "types/rtc";
+import { VIDEO_EVENT } from "types/video";
 
 import useWebRTC from "hooks/useWebRTC";
 

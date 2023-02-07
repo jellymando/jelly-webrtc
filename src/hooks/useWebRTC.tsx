@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback } from "react";
 import { useRecoilValue } from "recoil";
 
 import { socket } from "libs/socket";
-import { videoAtom } from "store/atoms/app";
+import { videoAtom } from "store/atoms/video";
 import { CONNECTION_EVENT, CONNECTION_STATE } from "types/rtc";
 
 type messageType = {
