@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useEffect } from "react";
-import { useSetRecoilState } from "recoil";
+import { useRecoilState } from "recoil";
 
 import { isPausedAtom } from "store/atoms/video";
 import { socket } from "libs/socket";
@@ -7,7 +7,7 @@ import { ROLE } from "types/message";
 import { VIDEO_EVENT } from "types/video";
 
 function useSocket() {
-  const setIsPaused = useSetRecoilState(isPausedAtom);
+  const [isPaused, setIsPaused] = useRecoilState(isPausedAtom);
   const myRole = useMemo(
     () =>
       window.location.pathname.replace("/", "") === ROLE.CLIENT
@@ -51,15 +51,11 @@ function useSocket() {
     socket.emit("leave", roomId);
   }, []);
 
-  const play = useCallback(() => {
-    socket.emit("play");
-  }, []);
+  useEffect(() => {
+    socket.emit(isPaused ? VIDEO_EVENT.PAUSE : VIDEO_EVENT.PLAY);
+  }, [isPaused]);
 
-  const pause = useCallback(() => {
-    socket.emit("pause");
-  }, []);
-
-  return { initRoom, leaveRoom, play, pause };
+  return { initRoom, leaveRoom };
 }
 
 export default useSocket;

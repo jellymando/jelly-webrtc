@@ -9,3 +9,8 @@ export const isPausedAtom = atom({
   key: "isPaused",
   default: true
 });
+
+export const isDrawAtom = atom({
+  key: "isDrawAtom",
+  default: false
+});

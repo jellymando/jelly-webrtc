@@ -58,11 +58,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("play", (message) => {
-    io.to(connectedRoom).emit("play", message);
+    socket.broadcast.to(connectedRoom).emit("play", message);
   });
 
   socket.on("pause", (message) => {
-    io.to(connectedRoom).emit("pause", message);
+    socket.broadcast.to(connectedRoom).emit("pause", message);
   });
 });
 

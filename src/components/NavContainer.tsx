@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect } from "react";
-import { useRecoilValue } from "recoil";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import styled from "styled-components";
 
 import { socket } from "libs/socket";
-import { videoAtom } from "store/atoms/video";
+import { videoAtom, isPausedAtom, isDrawAtom } from "store/atoms/video";
 import { COLOR } from "types/style";
 import { ROLE } from "types/message";
 import { CONNECTION_EVENT } from "types/rtc";
-import { VIDEO_EVENT } from "types/video";
 
 import useWebRTC from "hooks/useWebRTC";
 
@@ -23,6 +22,8 @@ const Button = styled.button`
 
 const Nav = ({ role }: { role: ROLE }) => {
   const video = useRecoilValue(videoAtom);
+  const setIsPaused = useSetRecoilState(isPausedAtom);
+  const setIsDraw = useSetRecoilState(isDrawAtom);
   const { isSharing, initRTC, startScreenShare, closeScreenShare } =
     useWebRTC();
 
@@ -36,7 +37,8 @@ const Nav = ({ role }: { role: ROLE }) => {
   }, [isSharing, startScreenShare, closeScreenShare]);
 
   const handleDraw = useCallback(() => {
-    socket.emit(VIDEO_EVENT.PAUSE);
+    setIsPaused(true);
+    setIsDraw(true);
   }, []);
 
   useEffect(() => {

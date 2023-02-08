@@ -1,11 +1,10 @@
 import React, { useRef, useCallback, useEffect } from "react";
-import { useSetRecoilState } from "recoil";
+import { useRecoilState, useSetRecoilState } from "recoil";
 import styled from "styled-components";
+import { SimpleToolbar, SimpleCanvas } from "my-simple-canvas";
 
-import { socket } from "libs/socket";
-import { videoAtom } from "store/atoms/app";
+import { isPausedAtom, videoAtom } from "store/atoms/video";
 import { COLOR } from "types/style";
-import { VIDEO_EVENT } from "types/rtc";
 
 const VideoWrap = styled.div`
   width: 90%;
@@ -21,12 +20,10 @@ const Video = styled.video`
   height: 100%;
 `;
 
-const Canvas = styled.canvas``;
-
 function VideoContainer() {
   const setVideo = useSetRecoilState(videoAtom);
+  const [isPaused, setIsPaused] = useRecoilState(isPausedAtom);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const play = useCallback(() => {
     if (!videoRef.current) return;
@@ -44,23 +41,36 @@ function VideoContainer() {
     }
   }, []);
 
+  const pause = useCallback(() => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    video.pause();
+  }, []);
+
+  const handlePlay = useCallback(() => {
+    setIsPaused(false);
+  }, []);
+
   useEffect(() => {
     if (!videoRef.current) return;
     setVideo(videoRef.current);
-
-    socket.on(VIDEO_EVENT.PLAY, async () => {
-      await play();
-    });
-
-    socket.on(VIDEO_EVENT.PAUSE, () => {
-      videoRef.current!.pause();
-    });
   }, []);
+
+  useEffect(() => {
+    isPaused ? pause() : play();
+  }, [isPaused]);
 
   return (
     <VideoWrap>
-      <Canvas ref={canvasRef} />
-      <Video ref={videoRef} autoPlay playsInline muted />
+      {/* <SimpleCanvas /> */}
+      <Video
+        id="video"
+        ref={videoRef}
+        onPlay={handlePlay}
+        autoPlay
+        playsInline
+        muted
+      />
     </VideoWrap>
   );
 }

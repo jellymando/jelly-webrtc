@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { RecoilRoot } from "recoil";
 import { v4 as uuidv4 } from "uuid";
 
 import useSocket from "hooks/useSocket";
@@ -37,11 +36,7 @@ function App() {
     };
   }, []);
 
-  return (
-    <RecoilRoot>
-      <RouterProvider router={router} />
-    </RecoilRoot>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
