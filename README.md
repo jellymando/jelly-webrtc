@@ -1,6 +1,7 @@
 ## WebRTC를 이용한 화면공유 서비스 만들기 (ing)
 
 ### 기능 스펙
+- React
 - socketIo
 - webRTC
 - Recoil
